@@ -230,7 +230,7 @@ export function StudentApp({ user, onLogout }: { user: User; onLogout: () => voi
           </div>
         </div>
         <nav className="space-y-2">
-          {[['/student/dashboard', 'Dashboard'], ['/student/profile', 'Academic Profile'], ['/student/risk', 'Risk Analysis'], ['/student/history', 'Prediction History'], ['/student/simulate', 'What-if Simulator']].map(([to, label]) => (
+          {([['/student/dashboard', 'Dashboard'], ['/student/profile', 'Academic Profile'], ['/student/risk', 'Risk Analysis'], ['/student/history', 'Prediction History'], ['/student/simulate', 'What-if Simulator']] as const).map(([to, label]) => (
             <Link key={to} to={to} className="block rounded-xl px-3 py-2 text-sm font-medium" activeProps={{ className: 'bg-blue-600 text-white' }} inactiveProps={{ className: 'text-slate-300 hover:bg-slate-800' }}>
               {label}
             </Link>
@@ -259,7 +259,7 @@ export function FacultyApp({ user, onLogout }: { user: User; onLogout: () => voi
           </div>
         </div>
         <nav className="space-y-2">
-          {[['/faculty/dashboard', 'Dashboard'], ['/faculty/students', 'Students'], ['/faculty/model-metrics', 'Model Metrics']].map(([to, label]) => (
+          {([['/faculty/dashboard', 'Dashboard'], ['/faculty/students', 'Students'], ['/faculty/model-metrics', 'Model Metrics']] as const).map(([to, label]) => (
             <Link key={to} to={to} className="block rounded-xl px-3 py-2 text-sm font-medium" activeProps={{ className: 'bg-blue-600 text-white' }} inactiveProps={{ className: 'text-slate-300 hover:bg-slate-800' }}>
               {label}
             </Link>
