@@ -14,6 +14,7 @@ import { Route as FacultyRouteImport } from './routes/faculty'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as StudentRouteImport } from './routes/student'
+import { Route as ApiSplatRouteImport } from './routes/api/$'
 import { Route as FacultyIndexRouteImport } from './routes/faculty/index'
 import { Route as FacultyDashboardRouteImport } from './routes/faculty/dashboard'
 import { Route as FacultyModelMetricsRouteImport } from './routes/faculty/model-metrics'
@@ -48,6 +49,11 @@ const RegisterRoute = RegisterRouteImport.update({
 const StudentRoute = StudentRouteImport.update({
   id: '/student',
   path: '/student',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSplatRoute = ApiSplatRouteImport.update({
+  id: '/api/$',
+  path: '/api/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FacultyIndexRoute = FacultyIndexRouteImport.update({
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/student': typeof StudentRouteWithChildren
+  '/api/$': typeof ApiSplatRoute
   '/faculty/dashboard': typeof FacultyDashboardRoute
   '/faculty/model-metrics': typeof FacultyModelMetricsRoute
   '/faculty/students': typeof FacultyStudentsRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/api/$': typeof ApiSplatRoute
   '/faculty/dashboard': typeof FacultyDashboardRoute
   '/faculty/model-metrics': typeof FacultyModelMetricsRoute
   '/faculty/students': typeof FacultyStudentsRoute
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/student': typeof StudentRouteWithChildren
+  '/api/$': typeof ApiSplatRoute
   '/faculty/dashboard': typeof FacultyDashboardRoute
   '/faculty/model-metrics': typeof FacultyModelMetricsRoute
   '/faculty/students': typeof FacultyStudentsRoute
@@ -159,6 +168,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/student'
+    | '/api/$'
     | '/faculty/dashboard'
     | '/faculty/model-metrics'
     | '/faculty/students'
@@ -174,6 +184,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/register'
+    | '/api/$'
     | '/faculty/dashboard'
     | '/faculty/model-metrics'
     | '/faculty/students'
@@ -191,6 +202,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/student'
+    | '/api/$'
     | '/faculty/dashboard'
     | '/faculty/model-metrics'
     | '/faculty/students'
@@ -209,6 +221,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   StudentRoute: typeof StudentRouteWithChildren
+  ApiSplatRoute: typeof ApiSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -246,6 +259,13 @@ declare module '@tanstack/react-router' {
       path: '/student'
       fullPath: '/student'
       preLoaderRoute: typeof StudentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/$': {
+      id: '/api/$'
+      path: '/api/$'
+      fullPath: '/api/$'
+      preLoaderRoute: typeof ApiSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/faculty/': {
@@ -365,6 +385,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   StudentRoute: StudentRouteWithChildren,
+  ApiSplatRoute: ApiSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
