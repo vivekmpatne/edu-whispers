@@ -1,0 +1,55 @@
+{
+  "selectedModel": "RandomForest",
+  "datasetSize": 1800,
+  "trainRows": 1440,
+  "testRows": 360,
+  "precision": 0.931,
+  "recall": 0.675,
+  "f1Score": 0.7826,
+  "accuracy": 0.9583,
+  "rocAuc": 0.9904,
+  "confusionMatrix": [
+    [
+      318,
+      2
+    ],
+    [
+      13,
+      27
+    ]
+  ],
+  "report": {
+    "0": {
+      "precision": 0.9607250755287009,
+      "recall": 0.99375,
+      "f1-score": 0.9769585253456221,
+      "support": 320.0
+    },
+    "1": {
+      "precision": 0.9310344827586207,
+      "recall": 0.675,
+      "f1-score": 0.782608695652174,
+      "support": 40.0
+    },
+    "accuracy": 0.9583333333333334,
+    "macro avg": {
+      "precision": 0.9458797791436608,
+      "recall": 0.8343750000000001,
+      "f1-score": 0.8797836104988981,
+      "support": 360.0
+    },
+    "weighted avg": {
+      "precision": 0.9574261207764697,
+      "recall": 0.9583333333333334,
+      "f1-score": 0.9553640998241277,
+      "support": 360.0
+    }
+  },
+  "datasetSource": "Synthetic demonstration data generated from product-defined academic-risk rules",
+  "disclaimer": "This demonstration model is trained on synthetic academic data and is not validated on real institutional records.",
+  "risk_low_threshold": 0.3,
+  "risk_medium_threshold": 0.6,
+  "modelVersion": "v1.0.0",
+  "status": "trained",
+  "trainedAt": "2026-10-17T03:44:35.397419Z"
+}

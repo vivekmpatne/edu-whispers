@@ -10,33 +10,218 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as FacultyRouteImport } from './routes/faculty'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as RegisterRouteImport } from './routes/register'
+import { Route as StudentRouteImport } from './routes/student'
+import { Route as ApiSplatRouteImport } from './routes/api/$'
+import { Route as FacultyIndexRouteImport } from './routes/faculty/index'
+import { Route as FacultyDashboardRouteImport } from './routes/faculty/dashboard'
+import { Route as FacultyModelMetricsRouteImport } from './routes/faculty/model-metrics'
+import { Route as FacultyStudentsRouteImport } from './routes/faculty/students'
+import { Route as StudentIndexRouteImport } from './routes/student/index'
+import { Route as StudentDashboardRouteImport } from './routes/student/dashboard'
+import { Route as StudentHistoryRouteImport } from './routes/student/history'
+import { Route as StudentProfileRouteImport } from './routes/student/profile'
+import { Route as StudentRiskRouteImport } from './routes/student/risk'
+import { Route as StudentSimulateRouteImport } from './routes/student/simulate'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FacultyRoute = FacultyRouteImport.update({
+  id: '/faculty',
+  path: '/faculty',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudentRoute = StudentRouteImport.update({
+  id: '/student',
+  path: '/student',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSplatRoute = ApiSplatRouteImport.update({
+  id: '/api/$',
+  path: '/api/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FacultyIndexRoute = FacultyIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => FacultyRoute,
+} as any)
+const FacultyDashboardRoute = FacultyDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => FacultyRoute,
+} as any)
+const FacultyModelMetricsRoute = FacultyModelMetricsRouteImport.update({
+  id: '/model-metrics',
+  path: '/model-metrics',
+  getParentRoute: () => FacultyRoute,
+} as any)
+const FacultyStudentsRoute = FacultyStudentsRouteImport.update({
+  id: '/students',
+  path: '/students',
+  getParentRoute: () => FacultyRoute,
+} as any)
+const StudentIndexRoute = StudentIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentDashboardRoute = StudentDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentHistoryRoute = StudentHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentProfileRoute = StudentProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentRiskRoute = StudentRiskRouteImport.update({
+  id: '/risk',
+  path: '/risk',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentSimulateRoute = StudentSimulateRouteImport.update({
+  id: '/simulate',
+  path: '/simulate',
+  getParentRoute: () => StudentRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/faculty': typeof FacultyRouteWithChildren
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/student': typeof StudentRouteWithChildren
+  '/api/$': typeof ApiSplatRoute
+  '/faculty/dashboard': typeof FacultyDashboardRoute
+  '/faculty/model-metrics': typeof FacultyModelMetricsRoute
+  '/faculty/students': typeof FacultyStudentsRoute
+  '/student/dashboard': typeof StudentDashboardRoute
+  '/student/history': typeof StudentHistoryRoute
+  '/student/profile': typeof StudentProfileRoute
+  '/student/risk': typeof StudentRiskRoute
+  '/student/simulate': typeof StudentSimulateRoute
+  '/faculty/': typeof FacultyIndexRoute
+  '/student/': typeof StudentIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/api/$': typeof ApiSplatRoute
+  '/faculty/dashboard': typeof FacultyDashboardRoute
+  '/faculty/model-metrics': typeof FacultyModelMetricsRoute
+  '/faculty/students': typeof FacultyStudentsRoute
+  '/student/dashboard': typeof StudentDashboardRoute
+  '/student/history': typeof StudentHistoryRoute
+  '/student/profile': typeof StudentProfileRoute
+  '/student/risk': typeof StudentRiskRoute
+  '/student/simulate': typeof StudentSimulateRoute
+  '/faculty': typeof FacultyIndexRoute
+  '/student': typeof StudentIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/faculty': typeof FacultyRouteWithChildren
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/student': typeof StudentRouteWithChildren
+  '/api/$': typeof ApiSplatRoute
+  '/faculty/dashboard': typeof FacultyDashboardRoute
+  '/faculty/model-metrics': typeof FacultyModelMetricsRoute
+  '/faculty/students': typeof FacultyStudentsRoute
+  '/student/dashboard': typeof StudentDashboardRoute
+  '/student/history': typeof StudentHistoryRoute
+  '/student/profile': typeof StudentProfileRoute
+  '/student/risk': typeof StudentRiskRoute
+  '/student/simulate': typeof StudentSimulateRoute
+  '/faculty/': typeof FacultyIndexRoute
+  '/student/': typeof StudentIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/faculty'
+    | '/login'
+    | '/register'
+    | '/student'
+    | '/api/$'
+    | '/faculty/dashboard'
+    | '/faculty/model-metrics'
+    | '/faculty/students'
+    | '/student/dashboard'
+    | '/student/history'
+    | '/student/profile'
+    | '/student/risk'
+    | '/student/simulate'
+    | '/faculty/'
+    | '/student/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/login'
+    | '/register'
+    | '/api/$'
+    | '/faculty/dashboard'
+    | '/faculty/model-metrics'
+    | '/faculty/students'
+    | '/student/dashboard'
+    | '/student/history'
+    | '/student/profile'
+    | '/student/risk'
+    | '/student/simulate'
+    | '/faculty'
+    | '/student'
+  id:
+    | '__root__'
+    | '/'
+    | '/faculty'
+    | '/login'
+    | '/register'
+    | '/student'
+    | '/api/$'
+    | '/faculty/dashboard'
+    | '/faculty/model-metrics'
+    | '/faculty/students'
+    | '/student/dashboard'
+    | '/student/history'
+    | '/student/profile'
+    | '/student/risk'
+    | '/student/simulate'
+    | '/faculty/'
+    | '/student/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  FacultyRoute: typeof FacultyRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  RegisterRoute: typeof RegisterRoute
+  StudentRoute: typeof StudentRouteWithChildren
+  ApiSplatRoute: typeof ApiSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +233,159 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/faculty': {
+      id: '/faculty'
+      path: '/faculty'
+      fullPath: '/faculty'
+      preLoaderRoute: typeof FacultyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/student': {
+      id: '/student'
+      path: '/student'
+      fullPath: '/student'
+      preLoaderRoute: typeof StudentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/$': {
+      id: '/api/$'
+      path: '/api/$'
+      fullPath: '/api/$'
+      preLoaderRoute: typeof ApiSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faculty/': {
+      id: '/faculty/'
+      path: '/'
+      fullPath: '/faculty/'
+      preLoaderRoute: typeof FacultyIndexRouteImport
+      parentRoute: typeof FacultyRoute
+    }
+    '/faculty/dashboard': {
+      id: '/faculty/dashboard'
+      path: '/dashboard'
+      fullPath: '/faculty/dashboard'
+      preLoaderRoute: typeof FacultyDashboardRouteImport
+      parentRoute: typeof FacultyRoute
+    }
+    '/faculty/model-metrics': {
+      id: '/faculty/model-metrics'
+      path: '/model-metrics'
+      fullPath: '/faculty/model-metrics'
+      preLoaderRoute: typeof FacultyModelMetricsRouteImport
+      parentRoute: typeof FacultyRoute
+    }
+    '/faculty/students': {
+      id: '/faculty/students'
+      path: '/students'
+      fullPath: '/faculty/students'
+      preLoaderRoute: typeof FacultyStudentsRouteImport
+      parentRoute: typeof FacultyRoute
+    }
+    '/student/': {
+      id: '/student/'
+      path: '/'
+      fullPath: '/student/'
+      preLoaderRoute: typeof StudentIndexRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/dashboard': {
+      id: '/student/dashboard'
+      path: '/dashboard'
+      fullPath: '/student/dashboard'
+      preLoaderRoute: typeof StudentDashboardRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/history': {
+      id: '/student/history'
+      path: '/history'
+      fullPath: '/student/history'
+      preLoaderRoute: typeof StudentHistoryRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/profile': {
+      id: '/student/profile'
+      path: '/profile'
+      fullPath: '/student/profile'
+      preLoaderRoute: typeof StudentProfileRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/risk': {
+      id: '/student/risk'
+      path: '/risk'
+      fullPath: '/student/risk'
+      preLoaderRoute: typeof StudentRiskRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/simulate': {
+      id: '/student/simulate'
+      path: '/simulate'
+      fullPath: '/student/simulate'
+      preLoaderRoute: typeof StudentSimulateRouteImport
+      parentRoute: typeof StudentRoute
+    }
   }
 }
 
+interface FacultyRouteChildren {
+  FacultyDashboardRoute: typeof FacultyDashboardRoute
+  FacultyModelMetricsRoute: typeof FacultyModelMetricsRoute
+  FacultyStudentsRoute: typeof FacultyStudentsRoute
+  FacultyIndexRoute: typeof FacultyIndexRoute
+}
+
+const FacultyRouteChildren: FacultyRouteChildren = {
+  FacultyDashboardRoute: FacultyDashboardRoute,
+  FacultyModelMetricsRoute: FacultyModelMetricsRoute,
+  FacultyStudentsRoute: FacultyStudentsRoute,
+  FacultyIndexRoute: FacultyIndexRoute,
+}
+
+const FacultyRouteWithChildren =
+  FacultyRoute._addFileChildren(FacultyRouteChildren)
+
+interface StudentRouteChildren {
+  StudentDashboardRoute: typeof StudentDashboardRoute
+  StudentHistoryRoute: typeof StudentHistoryRoute
+  StudentProfileRoute: typeof StudentProfileRoute
+  StudentRiskRoute: typeof StudentRiskRoute
+  StudentSimulateRoute: typeof StudentSimulateRoute
+  StudentIndexRoute: typeof StudentIndexRoute
+}
+
+const StudentRouteChildren: StudentRouteChildren = {
+  StudentDashboardRoute: StudentDashboardRoute,
+  StudentHistoryRoute: StudentHistoryRoute,
+  StudentProfileRoute: StudentProfileRoute,
+  StudentRiskRoute: StudentRiskRoute,
+  StudentSimulateRoute: StudentSimulateRoute,
+  StudentIndexRoute: StudentIndexRoute,
+}
+
+const StudentRouteWithChildren =
+  StudentRoute._addFileChildren(StudentRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  FacultyRoute: FacultyRouteWithChildren,
+  LoginRoute: LoginRoute,
+  RegisterRoute: RegisterRoute,
+  StudentRoute: StudentRouteWithChildren,
+  ApiSplatRoute: ApiSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
