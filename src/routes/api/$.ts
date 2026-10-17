@@ -7,7 +7,7 @@ import * as store from "@/server/explainedu/store";
 import * as ml from "@/server/explainedu/ml";
 
 const json = (body: unknown, status = 200) => Response.json(body, { status });
-const secret = () => new TextEncoder().encode(process.env.JWT_SECRET || "development-secret");
+const secret = () => new TextEncoder().encode(process.env["JWT_SECRET"] || "development-secret");
 const publicUser = (u: store.User) => ({ ...u, passwordHash: undefined });
 
 async function signToken(user: store.User) {
@@ -15,7 +15,7 @@ async function signToken(user: store.User) {
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(user.id)
     .setIssuedAt()
-    .setExpirationTime(process.env.JWT_EXPIRES_IN || "7d")
+    .setExpirationTime(process.env["JWT_EXPIRES_IN"] || "7d")
     .sign(secret());
 }
 
@@ -100,7 +100,7 @@ async function handle(req: Request, path: string): Promise<Response> {
   const method = req.method;
   const route = `${method} /${path.replace(/\/+$/, "")}`;
 
-  if (route === "GET /health") return json({ status: "ok", service: "ExplainEdu API", environment: process.env.NODE_ENV || "development" });
+  if (route === "GET /health") return json({ status: "ok", service: "ExplainEdu API", environment: process.env["NODE_ENV"] || "development" });
 
   // ---- auth
   if (route === "POST /auth/register") {
@@ -113,7 +113,7 @@ async function handle(req: Request, path: string): Promise<Response> {
     return json({ token: await signToken(user), user: publicUser(user) }, 201);
   }
   if (route === "POST /auth/demo-faculty") {
-    if ((process.env.NODE_ENV || "development") !== "development") return json({ message: "This route is only available in development mode." }, 403);
+    if ((process.env["NODE_ENV"] || "development") !== "development") return json({ message: "This route is only available in development mode." }, 403);
     const parsed = registerSchema.safeParse(await readJson(req));
     if (!parsed.success) return json({ message: "Invalid faculty demo account data.", errors: parsed.error.flatten() }, 400);
     if (store.getUserByEmail(parsed.data.email)) return json({ message: "A user with this email already exists." }, 409);
