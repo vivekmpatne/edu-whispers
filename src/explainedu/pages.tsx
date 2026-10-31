@@ -198,34 +198,72 @@ export function LoginPage({ onLogin, setToken }: { onLogin: (user: User) => void
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const performLogin = async (loginEmail: string, loginPass: string) => {
     setError('');
     setLoading(true);
     try {
-      const response = await api.post('/api/auth/login', { email, password });
+      const response = await api.post('/api/auth/login', { email: loginEmail, password: loginPass });
       const nextToken = response.data.token;
       setStoredToken(nextToken);
       setToken(nextToken);
       api.defaults.headers.common.Authorization = `Bearer ${nextToken}`;
       onLogin(response.data.user);
       navigate({ to: response.data.user.role === 'faculty' ? '/faculty/dashboard' : '/student/dashboard' });
-    } catch (err) {
+    } catch {
       setError('Login failed. Check the demo credentials or register a new account.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    await performLogin(email, password);
+  };
+
   return (
     <AuthFrame>
       <div className="mb-6 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600"><GraduationCap className="h-5 w-5" /></div>
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+          <GraduationCap className="h-5 w-5" />
+        </div>
         <div>
           <p className="text-xl font-semibold tracking-tight">Welcome back</p>
           <p className="text-sm text-slate-500">ExplainEdu AI</p>
         </div>
       </div>
+
+      {/* ⚡ 1-Click Quick Demo Login */}
+      <div className="mb-5 rounded-2xl border border-blue-100 bg-blue-50/60 p-3.5">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold uppercase tracking-wider text-blue-700">⚡ 1-Click Quick Login</span>
+          <span className="text-[11px] text-blue-600">Instant access</span>
+        </div>
+        <div className="mt-2.5 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() => performLogin('student@demo.com', 'student123')}
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 shadow-sm transition hover:bg-blue-50 hover:border-blue-300 disabled:opacity-50"
+          >
+            <span>👨‍🎓</span> Student Demo
+          </button>
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() => performLogin('faculty@demo.com', 'faculty123')}
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 shadow-sm transition hover:bg-blue-50 hover:border-blue-300 disabled:opacity-50"
+          >
+            <span>👨‍🏫</span> Faculty Demo
+          </button>
+        </div>
+      </div>
+
+      <div className="relative my-4 flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200" /></div>
+        <span className="relative bg-white px-3 text-[11px] font-medium uppercase text-slate-400">or sign in manually</span>
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <label className="block">
           <span className="mb-1.5 block text-xs font-medium text-slate-500">Email</span>
@@ -266,7 +304,7 @@ export function RegisterPage({ onLogin, setToken }: { onLogin: (user: User) => v
       api.defaults.headers.common.Authorization = `Bearer ${response.data.token}`;
       onLogin(response.data.user);
       navigate({ to: '/student/dashboard' });
-    } catch (err) {
+    } catch {
       setError('Unable to create the student account. Please try again.');
     } finally {
       setLoading(false);
@@ -370,7 +408,7 @@ export function StudentProfilePage() {
     try {
       const response = await api.put('/api/student/profile', profile);
       setMessage(response.data.message);
-    } catch (error) {
+    } catch {
       setFailed(true);
       setMessage('Unable to save academic profile.');
     } finally {
@@ -670,7 +708,7 @@ export function FacultyStudents() {
                     <td className="p-3 pl-5 font-medium text-slate-900">{student.name}</td>
                     <td className="tabular p-3">{student.profile?.attendance ?? '-'}</td>
                     <td className="tabular p-3">{student.profile?.quizAverage ?? '-'}</td>
-                    <td className="p-3 pr-5"><RiskPill category={student.latestRiskCategory} /></td>
+                    <td className="p-3 pr-5"><RiskPill category={student.latestRiskCategory ?? null} /></td>
                   </tr>
                 ))}
               </tbody>
