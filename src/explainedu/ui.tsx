@@ -60,7 +60,7 @@ const pillTone: Record<RiskLevel, string> = {
   unknown: 'bg-slate-50 text-slate-600 border-slate-200',
 };
 
-export function RiskPill({ category }: { category?: string | null }) {
+export function RiskPill({ category }: { category?: string | null | undefined }) {
   const level = riskLevel(category);
   return (
     <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${pillTone[level]}`}>
