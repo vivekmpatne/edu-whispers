@@ -5,6 +5,9 @@ export type User = {
   name: string;
   email: string;
   role: "student" | "faculty";
+  usn?: string;
+  branch?: string;
+  section?: string;
 };
 
 export type ProfileForm = {

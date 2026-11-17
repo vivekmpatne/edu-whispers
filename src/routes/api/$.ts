@@ -41,7 +41,17 @@ const readJson = async (req: Request) => {
 };
 
 const registerSchema = z.object({ name: z.string().min(2), email: z.string().email(), password: z.string().min(6) });
-const loginSchema = z.object({ email: z.string().email(), password: z.string().min(6) });
+const signupSchema = z.object({
+  name: z.string().trim().min(2, "Name must be at least 2 characters."),
+  email: z.string().trim().email("Enter a valid email."),
+  password: z.string().min(6, "Password must be at least 6 characters."),
+  role: z.enum(["student", "faculty"]).default("student"),
+  usn: z.string().trim().max(20).optional(),
+  branch: z.string().trim().max(20).optional(),
+  section: z.string().trim().max(5).optional(),
+});
+const loginSchema = z.object({ email: z.string().email(), password: z.string().min(1), role: z.enum(["student", "faculty"]).optional() });
+const commentSchema = z.object({ field: z.string().trim().min(1).max(60), comment: z.string().trim().min(3).max(500) });
 const profileSchema = z.object({
   attendance: z.number().min(0).max(100),
   assignmentCompletion: z.number().min(0).max(100),
@@ -104,11 +114,18 @@ async function handle(req: Request, path: string): Promise<Response> {
 
   // ---- auth
   if (route === "POST /auth/register") {
-    const parsed = registerSchema.safeParse(await readJson(req));
-    if (!parsed.success) return json({ message: "Invalid registration data.", errors: parsed.error.flatten() }, 400);
-    const { name, email, password } = parsed.data;
+    const parsed = signupSchema.safeParse(await readJson(req));
+    if (!parsed.success) return json({ message: parsed.error.issues[0]?.message || "Invalid registration data.", errors: parsed.error.flatten() }, 400);
+    const { name, email, password, role } = parsed.data;
     if (store.getUserByEmail(email)) return json({ message: "A user with this email already exists." }, 409);
-    const user: store.User = { id: store.uid("user"), name, email, passwordHash: await bcrypt.hash(password, 10), role: "student", createdAt: new Date().toISOString() };
+    let extra: Partial<store.User> = {};
+    if (role === "student") {
+      const usn = (parsed.data.usn || "").toUpperCase();
+      if (!/^[A-Z0-9]{5,20}$/.test(usn)) return json({ message: "Enter a valid USN (letters and numbers only)." }, 400);
+      if (store.getUserByUsn(usn)) return json({ message: "A student with this USN already exists." }, 409);
+      extra = { usn, branch: parsed.data.branch?.toUpperCase() || undefined, section: parsed.data.section?.toUpperCase() || undefined };
+    }
+    const user: store.User = { id: store.uid("user"), name, email: email.toLowerCase(), passwordHash: await bcrypt.hash(password, 10), role, createdAt: new Date().toISOString(), ...extra };
     store.users.push(user);
     return json({ token: await signToken(user), user: publicUser(user) }, 201);
   }
@@ -126,6 +143,7 @@ async function handle(req: Request, path: string): Promise<Response> {
     if (!parsed.success) return json({ message: "Invalid login payload." }, 400);
     const user = store.getUserByEmail(parsed.data.email);
     if (!user || !(await bcrypt.compare(parsed.data.password, user.passwordHash))) return json({ message: "Invalid email or password." }, 401);
+    if (parsed.data.role && parsed.data.role !== user.role) return json({ message: `This account is not a ${parsed.data.role} account.` }, 403);
     return json({ token: await signToken(user), user: publicUser(user) });
   }
   if (route === "GET /auth/me") {
@@ -141,10 +159,14 @@ async function handle(req: Request, path: string): Promise<Response> {
     if (user.role !== "student") return json({ message: "Access denied for this role." }, 403);
 
     if (route === "GET /student/profile") return json({ profile: store.getStudentProfile(user.id) || null });
-    if (route === "PUT /student/profile") {
-      const parsed = profileSchema.safeParse(await readJson(req));
-      if (!parsed.success) return json({ message: "Invalid academic profile.", errors: parsed.error.flatten() }, 400);
-      return json({ message: "Academic profile saved successfully.", profile: store.setStudentProfile(user.id, parsed.data) });
+    if (route === "PUT /student/profile") return json({ message: "Academic data can only be edited by faculty. Add a comment if something is wrong." }, 403);
+    if (route === "GET /student/comments") return json({ comments: store.comments.filter((c) => c.userId === user.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt)) });
+    if (route === "POST /student/comments") {
+      const parsed = commentSchema.safeParse(await readJson(req));
+      if (!parsed.success) return json({ message: "Pick a field and write at least 3 characters." }, 400);
+      const c: store.DataComment = { id: store.uid("comment"), userId: user.id, ...parsed.data, status: "open", createdAt: new Date().toISOString() };
+      store.comments.push(c);
+      return json({ comment: c }, 201);
     }
     if (route === "POST /student/analyze") {
       const profile = store.getStudentProfile(user.id);
@@ -189,6 +211,10 @@ async function handle(req: Request, path: string): Promise<Response> {
           id: s.user.id,
           name: s.user.name,
           email: s.user.email,
+          usn: s.user.usn || null,
+          branch: s.user.branch || null,
+          section: s.user.section || null,
+          openComments: store.comments.filter((c) => c.userId === s.user.id && c.status === "open").length,
           profile: s.profile,
           latestRiskCategory: s.latestPrediction?.riskCategory || "Unanalysed",
           lastAnalysis: s.latestPrediction?.createdAt || null,
@@ -201,7 +227,34 @@ async function handle(req: Request, path: string): Promise<Response> {
       if (!student || student.role !== "student") return json({ message: "Student not found." }, 404);
       const latest = store.getAllStudents().find((s) => s.user.id === student.id)?.latestPrediction;
       // Matches original: returns the user object as stored.
-      return json({ user: student, profile: store.getStudentProfile(student.id), latestPrediction: latest || null });
+      return json({ user: publicUser(student), profile: store.getStudentProfile(student.id), latestPrediction: latest || null });
+    }
+    const pm = /^PUT \/faculty\/students\/([^/]+)\/profile$/.exec(route);
+    if (pm) {
+      const student = store.getUserById(decodeURIComponent(pm[1]!));
+      if (!student || student.role !== "student") return json({ message: "Student not found." }, 404);
+      const parsed = profileSchema.safeParse(await readJson(req));
+      if (!parsed.success) return json({ message: "Invalid academic values." }, 400);
+      return json({ message: "Student data updated.", profile: store.setStudentProfile(student.id, parsed.data) });
+    }
+    if (route === "GET /faculty/comments") {
+      return json({
+        comments: store.comments
+          .map((c) => {
+            const u = store.getUserById(c.userId);
+            return { ...c, studentName: u?.name, usn: u?.usn };
+          })
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+      });
+    }
+    const rm = /^POST \/faculty\/comments\/([^/]+)\/resolve$/.exec(route);
+    if (rm) {
+      const c = store.comments.find((x) => x.id === decodeURIComponent(rm[1]!));
+      if (!c) return json({ message: "Comment not found." }, 404);
+      const body = (await readJson(req)) as { reply?: unknown };
+      c.status = "resolved";
+      if (typeof body.reply === "string") c.facultyReply = body.reply.slice(0, 500);
+      return json({ comment: c });
     }
     if (route === "POST /faculty/import/preview") {
       const text = await readCsvFile(req);

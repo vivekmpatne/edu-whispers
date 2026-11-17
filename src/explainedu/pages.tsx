@@ -53,7 +53,12 @@ type FacultySummary = { totalStudents?: number; lowRisk?: number; mediumRisk?: n
 type FacultyStudent = {
   id: string;
   name: string;
-  profile?: { attendance?: number; quizAverage?: number } | null;
+  email?: string;
+  usn?: string | null;
+  branch?: string | null;
+  section?: string | null;
+  openComments?: number;
+  profile?: Partial<ProfileForm> | null;
   latestRiskCategory?: string | null;
 };
 
@@ -183,6 +188,24 @@ export function LandingPage({ user }: { user: User | null }) {
   );
 }
 
+
+function apiError(err: unknown, fallback: string) {
+  const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+  return msg || fallback;
+}
+
+function RoleToggle({ role, onChange }: { role: 'student' | 'faculty'; onChange: (r: 'student' | 'faculty') => void }) {
+  return (
+    <div className="grid grid-cols-2 gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
+      {(['student', 'faculty'] as const).map((r) => (
+        <button key={r} type="button" onClick={() => onChange(r)} className={`rounded-lg px-3 py-2 text-sm font-medium capitalize transition ${role === r ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>
+          {r}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function AuthFrame({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-canvas px-4 py-8 text-slate-900">
@@ -197,20 +220,21 @@ export function LoginPage({ onLogin, setToken }: { onLogin: (user: User) => void
   const [password, setPassword] = useState('student123');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [role, setRole] = useState<'student' | 'faculty'>('student');
 
-  const performLogin = async (loginEmail: string, loginPass: string) => {
+  const performLogin = async (loginEmail: string, loginPass: string, loginRole?: 'student' | 'faculty') => {
     setError('');
     setLoading(true);
     try {
-      const response = await api.post('/api/auth/login', { email: loginEmail, password: loginPass });
+      const response = await api.post('/api/auth/login', { email: loginEmail, password: loginPass, role: loginRole });
       const nextToken = response.data.token;
       setStoredToken(nextToken);
       setToken(nextToken);
       api.defaults.headers.common.Authorization = `Bearer ${nextToken}`;
       onLogin(response.data.user);
       navigate({ to: response.data.user.role === 'faculty' ? '/faculty/dashboard' : '/student/dashboard' });
-    } catch {
-      setError('Login failed. Check the demo credentials or register a new account.');
+    } catch (err) {
+      setError(apiError(err, 'Login failed. Check the demo credentials or register a new account.'));
     } finally {
       setLoading(false);
     }
@@ -218,7 +242,7 @@ export function LoginPage({ onLogin, setToken }: { onLogin: (user: User) => void
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    await performLogin(email, password);
+    await performLogin(email, password, role);
   };
 
   return (
@@ -265,6 +289,7 @@ export function LoginPage({ onLogin, setToken }: { onLogin: (user: User) => void
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        <RoleToggle role={role} onChange={setRole} />
         <label className="block">
           <span className="mb-1.5 block text-xs font-medium text-slate-500">Email</span>
           <input value={email} onChange={(event) => setEmail(event.target.value)} className={inputClass} />
@@ -279,6 +304,7 @@ export function LoginPage({ onLogin, setToken }: { onLogin: (user: User) => void
       <div className="mt-5 space-y-1 rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-xs text-slate-500">
         <p>Demo student: <span className="font-medium text-slate-800">student@demo.com / student123</span></p>
         <p>Demo faculty: <span className="font-medium text-slate-800">faculty@demo.com / faculty123</span></p>
+        <p>100 sample students: <span className="font-medium text-slate-800">student001@explainedu.edu … student100@explainedu.edu / student123</span></p>
       </div>
       <p className="mt-5 text-center text-sm text-slate-500">Need an account? <Link to="/register" className="font-medium text-blue-600 hover:text-blue-700">Register</Link></p>
     </AuthFrame>
@@ -287,25 +313,34 @@ export function LoginPage({ onLogin, setToken }: { onLogin: (user: User) => void
 
 export function RegisterPage({ onLogin, setToken }: { onLogin: (user: User) => void; setToken: (token: string | null) => void }) {
   const navigate = useNavigate();
+  const [role, setRole] = useState<'student' | 'faculty'>('student');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [usn, setUsn] = useState('');
+  const [branch, setBranch] = useState('');
+  const [section, setSection] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setLoading(true);
     setError('');
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+    setLoading(true);
     try {
-      const response = await api.post('/api/auth/register', { name, email, password, role: 'student' });
+      const payload = role === 'student' ? { name, email, password, role, usn, branch, section } : { name, email, password, role };
+      const response = await api.post('/api/auth/register', payload);
       setStoredToken(response.data.token);
       setToken(response.data.token);
       api.defaults.headers.common.Authorization = `Bearer ${response.data.token}`;
       onLogin(response.data.user);
-      navigate({ to: '/student/dashboard' });
-    } catch {
-      setError('Unable to create the student account. Please try again.');
+      navigate({ to: role === 'faculty' ? '/faculty/dashboard' : '/student/dashboard' });
+    } catch (err) {
+      setError(apiError(err, 'Unable to create the account. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -313,14 +348,24 @@ export function RegisterPage({ onLogin, setToken }: { onLogin: (user: User) => v
 
   return (
     <AuthFrame>
-      <h2 className="text-2xl font-semibold tracking-tight">Create student account</h2>
-      <p className="mt-2 text-sm text-slate-500">This is a demo MVP account for the student workflow.</p>
+      <h2 className="text-2xl font-semibold tracking-tight">Create account</h2>
+      <p className="mt-2 text-sm text-slate-500">Email and USN must be unique. Password needs at least 6 characters.</p>
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-        <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Full name" className={inputClass} />
-        <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email" className={inputClass} />
-        <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password" className={inputClass} />
+        <RoleToggle role={role} onChange={setRole} />
+        <input required value={name} onChange={(event) => setName(event.target.value)} placeholder="Full name" className={inputClass} />
+        <input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email" className={inputClass} />
+        {role === 'student' && (
+          <>
+            <input required value={usn} onChange={(event) => setUsn(event.target.value.toUpperCase())} placeholder="USN (e.g. 1XE23CS101)" className={inputClass} />
+            <div className="grid grid-cols-2 gap-3">
+              <input value={branch} onChange={(event) => setBranch(event.target.value)} placeholder="Branch (e.g. CS)" className={inputClass} />
+              <input value={section} onChange={(event) => setSection(event.target.value)} placeholder="Section (e.g. A)" className={inputClass} />
+            </div>
+          </>
+        )}
+        <input required type="password" minLength={6} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password (min 6 characters)" className={inputClass} />
         {error && <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>}
-        <button type="submit" disabled={loading} className={`${primaryBtn} w-full py-3`}>{loading ? 'Creating account...' : 'Register'}</button>
+        <button type="submit" disabled={loading} className={`${primaryBtn} w-full py-3`}>{loading ? 'Creating account...' : `Register as ${role}`}</button>
       </form>
       <p className="mt-5 text-center text-sm"><Link to="/login" className="font-medium text-blue-600 hover:text-blue-700">Already have an account?</Link></p>
     </AuthFrame>
@@ -380,64 +425,82 @@ export function StudentDashboard({ user }: { user: User }) {
   );
 }
 
+type DataComment = { id: string; field: string; comment: string; status: 'open' | 'resolved'; facultyReply?: string; createdAt: string; studentName?: string; usn?: string; userId?: string };
+
 export function StudentProfilePage() {
-  const [profile, setProfile] = useState<ProfileForm>(DEFAULT_PROFILE);
+  const [profile, setProfile] = useState<ProfileForm | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [comments, setComments] = useState<DataComment[]>([]);
+  const [field, setField] = useState<string>(FIELDS[0]!.label);
+  const [text, setText] = useState('');
+  const [sending, setSending] = useState(false);
   const [message, setMessage] = useState('');
   const [failed, setFailed] = useState(false);
+
+  const loadComments = () => api.get('/api/student/comments').then((res) => setComments(res.data.comments)).catch(() => null);
 
   useEffect(() => {
     api
       .get('/api/student/profile')
-      .then((res) => {
-        if (res.data.profile) setProfile(pickProfile(res.data.profile));
-      })
+      .then((res) => setProfile(res.data.profile ? pickProfile(res.data.profile) : null))
       .catch(() => null)
       .finally(() => setLoading(false));
+    loadComments();
   }, []);
 
-  const updateField = (field: keyof ProfileForm, value: number) => {
-    setProfile((current) => ({ ...current, [field]: value }));
-  };
-
-  const handleSubmit = async (event: React.FormEvent) => {
+  const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setSaving(true);
+    setSending(true);
     setFailed(false);
     try {
-      const response = await api.put('/api/student/profile', profile);
-      setMessage(response.data.message);
-    } catch {
+      await api.post('/api/student/comments', { field, comment: text });
+      setText('');
+      setMessage('Comment sent to faculty.');
+      loadComments();
+    } catch (err) {
       setFailed(true);
-      setMessage('Unable to save academic profile.');
+      setMessage(apiError(err, 'Unable to send comment.'));
     } finally {
-      setSaving(false);
+      setSending(false);
     }
   };
 
   return (
     <div className="space-y-8">
-      <PageHeader index="02" badge="Academic profile" title="Academic profile" subtitle="Enter your latest academic indicators. These values feed the model and the what-if simulator." />
+      <PageHeader index="02" badge="Academic profile" title="Academic profile" subtitle="Your marks are maintained by faculty. If something looks wrong, leave a comment below." />
       <Card>
-        <form onSubmit={handleSubmit} className="grid gap-5 md:grid-cols-2">
-          {FIELDS.map((field) =>
-            loading ? (
-              <div key={field.key}>
-                <Skeleton className="mb-2 h-3 w-28" />
-                <Skeleton className="h-10 w-full" />
-              </div>
-            ) : (
-              <NumberField key={field.key} label={field.label} value={profile[field.key]} max={field.max} step={field.step} onChange={(value) => updateField(field.key, value)} />
-            ),
-          )}
-          <div className="flex flex-wrap items-center gap-3 md:col-span-2">
-            <button type="submit" disabled={saving || loading} className={primaryBtn}>{saving ? 'Saving...' : 'Save profile'}</button>
-            <Link to="/student/risk" className={secondaryBtn}>Analyze My Performance</Link>
+        {loading ? (
+          <div className="grid gap-3 md:grid-cols-2">{FIELDS.map((f) => <Skeleton key={f.key} className="h-14 w-full" />)}</div>
+        ) : !profile ? (
+          <EmptyState title="No academic data yet" hint="Your faculty hasn't entered your marks yet." />
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2">
+            {FIELDS.map((f) => <InfoLine key={f.key} label={f.label} value={String(profile[f.key])} />)}
           </div>
+        )}
+        <p className="mt-4 text-xs text-slate-500">Read-only — only faculty can edit these values.</p>
+      </Card>
+      <Card>
+        <p className="text-base font-semibold tracking-tight text-slate-900">Report incorrect data</p>
+        <form onSubmit={submit} className="mt-4 space-y-3">
+          <select value={field} onChange={(e) => setField(e.target.value)} className={inputClass}>
+            {FIELDS.map((f) => <option key={f.key}>{f.label}</option>)}
+            <option>Other</option>
+          </select>
+          <textarea required minLength={3} maxLength={500} value={text} onChange={(e) => setText(e.target.value)} placeholder="e.g. My attendance should be 82%, not 72%." className={`${inputClass} min-h-24`} />
+          <button type="submit" disabled={sending} className={primaryBtn}>{sending ? 'Sending...' : 'Send comment'}</button>
         </form>
-        {message && (
-          <p className={`mt-5 rounded-lg border px-3 py-2 text-sm ${failed ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}>{message}</p>
+        {message && <p className={`mt-4 rounded-lg border px-3 py-2 text-sm ${failed ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}>{message}</p>}
+        {comments.length > 0 && (
+          <ul className="mt-5 space-y-2">
+            {comments.map((c) => (
+              <li key={c.id} className="rounded-xl border border-slate-200 p-3 text-sm">
+                <div className="flex items-center justify-between"><span className="font-medium text-slate-900">{c.field}</span><span className={`rounded-full px-2 py-0.5 text-xs ${c.status === 'open' ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'}`}>{c.status}</span></div>
+                <p className="mt-1 text-slate-600">{c.comment}</p>
+                {c.facultyReply && <p className="mt-1 text-slate-500">Faculty: {c.facultyReply}</p>}
+              </li>
+            ))}
+          </ul>
         )}
       </Card>
     </div>
@@ -670,18 +733,85 @@ export function FacultyDashboard() {
 export function FacultyStudents() {
   const [students, setStudents] = useState<FacultyStudent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState('');
+  const [editing, setEditing] = useState<FacultyStudent | null>(null);
+  const [form, setForm] = useState<ProfileForm>(DEFAULT_PROFILE);
+  const [msg, setMsg] = useState('');
+  const [comments, setComments] = useState<DataComment[]>([]);
 
-  useEffect(() => {
+  const load = () =>
     api
       .get('/api/faculty/students')
       .then((res) => setStudents(res.data.students))
       .catch(() => setStudents([]))
       .finally(() => setLoading(false));
+  const loadComments = () => api.get('/api/faculty/comments').then((res) => setComments(res.data.comments)).catch(() => null);
+
+  useEffect(() => {
+    load();
+    loadComments();
   }, []);
+
+  const startEdit = (s: FacultyStudent) => {
+    setEditing(s);
+    setForm(pickProfile(s.profile as Partial<ProfileForm>));
+    setMsg('');
+  };
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editing) return;
+    try {
+      await api.put(`/api/faculty/students/${encodeURIComponent(editing.id)}/profile`, form);
+      setMsg('Saved.');
+      load();
+    } catch (err) {
+      setMsg(apiError(err, 'Unable to save.'));
+    }
+  };
+  const resolve = async (id: string) => {
+    const reply = window.prompt('Reply to student (optional)') ?? '';
+    await api.post(`/api/faculty/comments/${encodeURIComponent(id)}/resolve`, { reply }).catch(() => null);
+    loadComments();
+    load();
+  };
+
+  const q = query.trim().toLowerCase();
+  const shown = q ? students.filter((s) => [s.name, s.usn, s.email, s.branch, s.section].some((v) => v?.toLowerCase().includes(q))) : students;
+  const open = comments.filter((c) => c.status === 'open');
 
   return (
     <div className="space-y-8">
-      <PageHeader index="02" badge="Students" title="Students" subtitle="Latest profile values and risk category per student." />
+      <PageHeader index="02" badge="Students" title="Students" subtitle={`${students.length} students. Only faculty can see and edit this data.`} />
+      {open.length > 0 && (
+        <Card>
+          <p className="text-base font-semibold tracking-tight text-slate-900">Open student comments ({open.length})</p>
+          <ul className="mt-3 space-y-2">
+            {open.map((c) => (
+              <li key={c.id} className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-slate-200 p-3 text-sm">
+                <div><p className="font-medium text-slate-900">{c.studentName} · {c.usn} · {c.field}</p><p className="text-slate-600">{c.comment}</p></div>
+                <div className="flex gap-2">
+                  <button type="button" className={secondaryBtn} onClick={() => { const s = students.find((x) => x.id === c.userId); if (s) startEdit(s); }}>Edit data</button>
+                  <button type="button" className={primaryBtn} onClick={() => resolve(c.id)}>Resolve</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+      {editing && (
+        <Card>
+          <p className="text-base font-semibold tracking-tight text-slate-900">Edit {editing.name} ({editing.usn})</p>
+          <form onSubmit={save} className="mt-4 grid gap-4 md:grid-cols-3">
+            {FIELDS.map((f) => <NumberField key={f.key} label={f.label} value={form[f.key]} max={f.max} step={f.step} onChange={(v) => setForm((c) => ({ ...c, [f.key]: v }))} />)}
+            <div className="flex items-center gap-3 md:col-span-3">
+              <button type="submit" className={primaryBtn}>Save</button>
+              <button type="button" className={secondaryBtn} onClick={() => setEditing(null)}>Close</button>
+              {msg && <span className="text-sm text-slate-600">{msg}</span>}
+            </div>
+          </form>
+        </Card>
+      )}
+      <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by name, USN, branch, section…" className={inputClass} />
       <Card className="p-0">
         {loading ? (
           <div className="space-y-3 p-5">
@@ -689,26 +819,32 @@ export function FacultyStudents() {
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
           </div>
-        ) : students.length === 0 ? (
-          <div className="p-5"><EmptyState title="No students found" hint="Students appear here after they register." /></div>
+        ) : shown.length === 0 ? (
+          <div className="p-5"><EmptyState title="No students found" hint="Try a different search." /></div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[520px] text-left text-sm">
+            <table className="w-full min-w-[820px] text-left text-sm">
               <thead className="border-b border-slate-200 bg-slate-50/70 font-mono text-[11px] uppercase tracking-wider text-slate-500">
                 <tr>
-                  <th className="p-3 pl-5 font-medium">Student</th>
+                  <th className="p-3 pl-5 font-medium">USN</th>
+                  <th className="p-3 font-medium">Student</th>
+                  <th className="p-3 font-medium">Branch / Sec</th>
                   <th className="p-3 font-medium">Attendance</th>
-                  <th className="p-3 font-medium">Quiz</th>
-                  <th className="p-3 pr-5 font-medium">Risk</th>
+                  <th className="p-3 font-medium">CGPA</th>
+                  <th className="p-3 font-medium">Risk</th>
+                  <th className="p-3 pr-5 font-medium"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
-                {students.map((student) => (
+                {shown.map((student) => (
                   <tr key={student.id} className="transition-colors hover:bg-slate-50/70">
-                    <td className="p-3 pl-5 font-medium text-slate-900">{student.name}</td>
+                    <td className="tabular p-3 pl-5 font-mono text-xs">{student.usn ?? '-'}</td>
+                    <td className="p-3"><p className="font-medium text-slate-900">{student.name}{student.openComments ? <span className="ml-2 rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">{student.openComments} comment</span> : null}</p><p className="text-xs text-slate-500">{student.email}</p></td>
+                    <td className="p-3">{student.branch ?? '-'} / {student.section ?? '-'}</td>
                     <td className="tabular p-3">{student.profile?.attendance ?? '-'}</td>
-                    <td className="tabular p-3">{student.profile?.quizAverage ?? '-'}</td>
-                    <td className="p-3 pr-5"><RiskPill category={student.latestRiskCategory ?? null} /></td>
+                    <td className="tabular p-3">{student.profile?.previousCgpa ?? '-'}</td>
+                    <td className="p-3"><RiskPill category={student.latestRiskCategory ?? null} /></td>
+                    <td className="p-3 pr-5"><button type="button" className="text-sm font-medium text-blue-600 hover:text-blue-700" onClick={() => startEdit(student)}>Edit</button></td>
                   </tr>
                 ))}
               </tbody>
