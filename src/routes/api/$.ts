@@ -123,7 +123,9 @@ async function handle(req: Request, path: string): Promise<Response> {
       const usn = (parsed.data.usn || "").toUpperCase();
       if (!/^[A-Z0-9]{5,20}$/.test(usn)) return json({ message: "Enter a valid USN (letters and numbers only)." }, 400);
       if (store.getUserByUsn(usn)) return json({ message: "A student with this USN already exists." }, 409);
-      extra = { usn, branch: parsed.data.branch?.toUpperCase() || undefined, section: parsed.data.section?.toUpperCase() || undefined };
+      extra = { usn };
+      if (parsed.data.branch) extra.branch = parsed.data.branch.toUpperCase();
+      if (parsed.data.section) extra.section = parsed.data.section.toUpperCase();
     }
     const user: store.User = { id: store.uid("user"), name, email: email.toLowerCase(), passwordHash: await bcrypt.hash(password, 10), role, createdAt: new Date().toISOString(), ...extra };
     store.users.push(user);
