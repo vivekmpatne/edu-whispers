@@ -92,14 +92,26 @@ function pickProfile(data: Partial<ProfileForm> | null | undefined): ProfileForm
 }
 
 function pct(probability: number) {
-  return `${(probability * 100).toFixed(0)}%`;
+  // Whole percentages hid small but meaningful model probabilities as 0%.
+  return `${(probability * 100).toFixed(2)}%`;
 }
 
 function NumberField({ label, value, max, step, onChange }: { label: string; value: number; max: number; step: number; onChange: (value: number) => void }) {
   return (
     <label className="block">
       <span className="mb-1.5 block text-xs font-medium text-slate-500">{label}</span>
-      <input type="number" min={0} max={max} step={step} value={value} onChange={(event) => onChange(Number(event.target.value))} className={inputClass} />
+      <input
+        type="number"
+        min={0}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(event) => {
+          const next = event.currentTarget.valueAsNumber;
+          if (Number.isFinite(next)) onChange(Math.min(max, Math.max(0, next)));
+        }}
+        className={inputClass}
+      />
     </label>
   );
 }
@@ -696,7 +708,7 @@ export function SimulationPage() {
           <MetricCard icon={<TrendingUp className="h-5 w-5" />} label={`Baseline, ${result.baseline.riskCategory}`} value={pct(result.baseline.riskProbability)} tone="blue" />
           <MetricCard icon={<Activity className="h-5 w-5" />} label={`Hypothetical, ${result.hypothetical.riskCategory}`} value={pct(result.hypothetical.riskProbability)} tone="green" />
           <p className="text-sm text-slate-600 md:col-span-2">
-            Change in risk: <span className={`font-semibold ${delta <= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>{delta > 0 ? '+' : ''}{(delta * 100).toFixed(1)} points</span>
+            Change in risk: <span className={`font-semibold ${delta <= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>{delta > 0 ? '+' : ''}{(delta * 100).toFixed(2)} points</span>
           </p>
           {result.disclaimer && <p className="text-xs text-slate-500 md:col-span-2">{result.disclaimer}</p>}
         </div>
